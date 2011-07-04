@@ -663,15 +663,15 @@ levenshtein_common(PyObject *args, const char *name, size_t xcost,
   if (!PyArg_UnpackTuple(args, PYARGCFIX(name), 2, 2, &arg1, &arg2))
     return -1;
 
-  if (PyObject_TypeCheck(arg1, &PyString_Type)
-      && PyObject_TypeCheck(arg2, &PyString_Type)) {
+  if (PyObject_TypeCheck(arg1, &PyBytes_Type)
+      && PyObject_TypeCheck(arg2, &PyBytes_Type)) {
     lev_byte *string1, *string2;
 
-    len1 = PyString_GET_SIZE(arg1);
-    len2 = PyString_GET_SIZE(arg2);
+    len1 = PyBytes_GET_SIZE(arg1);
+    len2 = PyBytes_GET_SIZE(arg2);
     *lensum = len1 + len2;
-    string1 = PyString_AS_STRING(arg1);
-    string2 = PyString_AS_STRING(arg2);
+    string1 = (lev_byte *)PyBytes_AS_STRING(arg1);
+    string2 = (lev_byte *)PyBytes_AS_STRING(arg2);
     {
       size_t d = lev_edit_distance(len1, string1, len2, string2, xcost);
       if (d == (size_t)(-1)) {
@@ -715,7 +715,7 @@ distance_py(PyObject *self, PyObject *args)
   if ((ldist = levenshtein_common(args, "distance", 0, &lensum)) < 0)
     return NULL;
 
-  return PyInt_FromLong((long)ldist);
+  return PyLong_FromLong((long)ldist);
 }
 
 static PyObject*
@@ -744,21 +744,21 @@ hamming_py(PyObject *self, PyObject *args)
   if (!PyArg_UnpackTuple(args, PYARGCFIX(name), 2, 2, &arg1, &arg2))
     return NULL;
 
-  if (PyObject_TypeCheck(arg1, &PyString_Type)
-      && PyObject_TypeCheck(arg2, &PyString_Type)) {
+  if (PyObject_TypeCheck(arg1, &PyBytes_Type)
+      && PyObject_TypeCheck(arg2, &PyBytes_Type)) {
     lev_byte *string1, *string2;
 
-    len1 = PyString_GET_SIZE(arg1);
-    len2 = PyString_GET_SIZE(arg2);
+    len1 = PyBytes_GET_SIZE(arg1);
+    len2 = PyBytes_GET_SIZE(arg2);
     if (len1 != len2) {
       PyErr_Format(PyExc_ValueError,
                    "%s expected two strings of the same length", name);
       return NULL;
     }
-    string1 = PyString_AS_STRING(arg1);
-    string2 = PyString_AS_STRING(arg2);
+    string1 = (lev_byte *)PyBytes_AS_STRING(arg1);
+    string2 = (lev_byte *)PyBytes_AS_STRING(arg2);
     dist = lev_hamming_distance(len1, string1, string2);
-    return PyInt_FromLong(dist);
+    return PyLong_FromLong(dist);
   }
   else if (PyObject_TypeCheck(arg1, &PyUnicode_Type)
       && PyObject_TypeCheck(arg2, &PyUnicode_Type)) {
@@ -774,7 +774,7 @@ hamming_py(PyObject *self, PyObject *args)
     string1 = PyUnicode_AS_UNICODE(arg1);
     string2 = PyUnicode_AS_UNICODE(arg2);
     dist = lev_u_hamming_distance(len1, string1, string2);
-    return PyInt_FromLong(dist);
+    return PyLong_FromLong(dist);
   }
   else {
     PyErr_Format(PyExc_TypeError,
@@ -793,14 +793,14 @@ jaro_py(PyObject *self, PyObject *args)
   if (!PyArg_UnpackTuple(args, PYARGCFIX(name), 2, 2, &arg1, &arg2))
     return NULL;
 
-  if (PyObject_TypeCheck(arg1, &PyString_Type)
-      && PyObject_TypeCheck(arg2, &PyString_Type)) {
+  if (PyObject_TypeCheck(arg1, &PyBytes_Type)
+      && PyObject_TypeCheck(arg2, &PyBytes_Type)) {
     lev_byte *string1, *string2;
 
-    len1 = PyString_GET_SIZE(arg1);
-    len2 = PyString_GET_SIZE(arg2);
-    string1 = PyString_AS_STRING(arg1);
-    string2 = PyString_AS_STRING(arg2);
+    len1 = PyBytes_GET_SIZE(arg1);
+    len2 = PyBytes_GET_SIZE(arg2);
+    string1 = (lev_byte *)PyBytes_AS_STRING(arg1);
+    string2 = (lev_byte *)PyBytes_AS_STRING(arg2);
     return PyFloat_FromDouble(lev_jaro_ratio(len1, string1, len2, string2));
   }
   else if (PyObject_TypeCheck(arg1, &PyUnicode_Type)
@@ -843,14 +843,14 @@ jaro_winkler_py(PyObject *self, PyObject *args)
     }
   }
 
-  if (PyObject_TypeCheck(arg1, &PyString_Type)
-      && PyObject_TypeCheck(arg2, &PyString_Type)) {
+  if (PyObject_TypeCheck(arg1, &PyBytes_Type)
+      && PyObject_TypeCheck(arg2, &PyBytes_Type)) {
     lev_byte *string1, *string2;
 
-    len1 = PyString_GET_SIZE(arg1);
-    len2 = PyString_GET_SIZE(arg2);
-    string1 = PyString_AS_STRING(arg1);
-    string2 = PyString_AS_STRING(arg2);
+    len1 = PyBytes_GET_SIZE(arg1);
+    len2 = PyBytes_GET_SIZE(arg2);
+    string1 = (lev_byte *)PyBytes_AS_STRING(arg1);
+    string2 = (lev_byte *)PyBytes_AS_STRING(arg2);
     return PyFloat_FromDouble(lev_jaro_winkler_ratio(len1, string1,
                                                      len2, string2,
                                                      pfweight));
@@ -951,7 +951,7 @@ median_common(PyObject *args, const char *name, MedianFuncs foo)
     if (!medstr && len)
       result = PyErr_NoMemory();
     else {
-      result = PyString_FromStringAndSize(medstr, len);
+      result = PyBytes_FromStringAndSize((char *)medstr, len);
       free(medstr);
     }
   }
@@ -990,7 +990,7 @@ median_improve_common(PyObject *args, const char *name, MedianImproveFuncs foo)
   if (!PyArg_UnpackTuple(args, PYARGCFIX(name), 2, 3, &arg1, &strlist, &wlist))
     return NULL;
 
-  if (PyObject_TypeCheck(arg1, &PyString_Type))
+  if (PyObject_TypeCheck(arg1, &PyBytes_Type))
     stringtype = 0;
   else if (PyObject_TypeCheck(arg1, &PyUnicode_Type))
     stringtype = 1;
@@ -1030,13 +1030,13 @@ median_improve_common(PyObject *args, const char *name, MedianImproveFuncs foo)
 
   Py_DECREF(strseq);
   if (stringtype == 0) {
-    lev_byte *s = PyString_AS_STRING(arg1);
-    size_t l = PyString_GET_SIZE(arg1);
+    lev_byte *s = (lev_byte *)PyBytes_AS_STRING(arg1);
+    size_t l = PyBytes_GET_SIZE(arg1);
     lev_byte *medstr = foo.s(l, s, n, sizes, strings, weights, &len);
     if (!medstr && len)
       result = PyErr_NoMemory();
     else {
-      result = PyString_FromStringAndSize(medstr, len);
+      result = PyBytes_FromStringAndSize((char *)medstr, len);
       free(medstr);
     }
   }
@@ -1142,7 +1142,7 @@ extract_stringlist(PyObject *list, const char *name,
     return -1;
   }
 
-  if (PyObject_TypeCheck(first, &PyString_Type)) {
+  if (PyObject_TypeCheck(first, &PyBytes_Type)) {
     lev_byte **strings;
     size_t *sizes;
 
@@ -1160,20 +1160,20 @@ extract_stringlist(PyObject *list, const char *name,
       return -1;
     }
 
-    strings[0] = PyString_AS_STRING(first);
-    sizes[0] = PyString_GET_SIZE(first);
+    strings[0] = (lev_byte *)PyBytes_AS_STRING(first);
+    sizes[0] = PyBytes_GET_SIZE(first);
     for (i = 1; i < n; i++) {
       PyObject *item = PySequence_Fast_GET_ITEM(list, i);
 
-      if (!PyObject_TypeCheck(item, &PyString_Type)) {
+      if (!PyObject_TypeCheck(item, &PyBytes_Type)) {
         free(strings);
         free(sizes);
         PyErr_Format(PyExc_TypeError,
-                     "%s item #%i is not a String", name, i);
+                     "%s item #%i is not a Bytes", name, i);
         return -1;
       }
-      strings[i] = PyString_AS_STRING(item);
-      sizes[i] = PyString_GET_SIZE(item);
+      strings[i] = (lev_byte *)PyBytes_AS_STRING(item);
+      sizes[i] = PyBytes_GET_SIZE(item);
     }
 
     *(lev_byte***)strlist = strings;
@@ -1388,17 +1388,17 @@ extract_editops(PyObject *list)
     }
     ops[i].type = type;
     item = PyTuple_GET_ITEM(tuple, 1);
-    if (!PyInt_Check(item)) {
+    if (!PyLong_Check(item)) {
       free(ops);
       return NULL;
     }
-    ops[i].spos = (size_t)PyInt_AS_LONG(item);
+    ops[i].spos = (size_t)PyLong_AS_LONG(item);
     item = PyTuple_GET_ITEM(tuple, 2);
-    if (!PyInt_Check(item)) {
+    if (!PyLong_Check(item)) {
       free(ops);
       return NULL;
     }
-    ops[i].dpos = (size_t)PyInt_AS_LONG(item);
+    ops[i].dpos = (size_t)PyLong_AS_LONG(item);
   }
   return ops;
 }
@@ -1430,29 +1430,29 @@ extract_opcodes(PyObject *list)
     }
     bops[i].type = type;
     item = PyTuple_GET_ITEM(tuple, 1);
-    if (!PyInt_Check(item)) {
+    if (!PyLong_Check(item)) {
       free(bops);
       return NULL;
     }
-    bops[i].sbeg = (size_t)PyInt_AS_LONG(item);
+    bops[i].sbeg = (size_t)PyLong_AS_LONG(item);
     item = PyTuple_GET_ITEM(tuple, 2);
-    if (!PyInt_Check(item)) {
+    if (!PyLong_Check(item)) {
       free(bops);
       return NULL;
     }
-    bops[i].send = (size_t)PyInt_AS_LONG(item);
+    bops[i].send = (size_t)PyLong_AS_LONG(item);
     item = PyTuple_GET_ITEM(tuple, 3);
-    if (!PyInt_Check(item)) {
+    if (!PyLong_Check(item)) {
       free(bops);
       return NULL;
     }
-    bops[i].dbeg = (size_t)PyInt_AS_LONG(item);
+    bops[i].dbeg = (size_t)PyLong_AS_LONG(item);
     item = PyTuple_GET_ITEM(tuple, 4);
-    if (!PyInt_Check(item)) {
+    if (!PyLong_Check(item)) {
       free(bops);
       return NULL;
     }
-    bops[i].dend = (size_t)PyInt_AS_LONG(item);
+    bops[i].dend = (size_t)PyLong_AS_LONG(item);
   }
   return bops;
 }
@@ -1469,8 +1469,8 @@ editops_to_tuple_list(size_t n, LevEditOp *ops)
     PyObject *is = opcode_names[ops->type].pystring;
     Py_INCREF(is);
     PyTuple_SET_ITEM(tuple, 0, is);
-    PyTuple_SET_ITEM(tuple, 1, PyInt_FromLong((long)ops->spos));
-    PyTuple_SET_ITEM(tuple, 2, PyInt_FromLong((long)ops->dpos));
+    PyTuple_SET_ITEM(tuple, 1, PyLong_FromLong((long)ops->spos));
+    PyTuple_SET_ITEM(tuple, 2, PyLong_FromLong((long)ops->dpos));
     PyList_SET_ITEM(list, i, tuple);
   }
 
@@ -1487,15 +1487,15 @@ matching_blocks_to_tuple_list(size_t len1, size_t len2,
   list = PyList_New(nmb + 1);
   for (i = 0; i < nmb; i++, mblocks++) {
     tuple = PyTuple_New(3);
-    PyTuple_SET_ITEM(tuple, 0, PyInt_FromLong((long)mblocks->spos));
-    PyTuple_SET_ITEM(tuple, 1, PyInt_FromLong((long)mblocks->dpos));
-    PyTuple_SET_ITEM(tuple, 2, PyInt_FromLong((long)mblocks->len));
+    PyTuple_SET_ITEM(tuple, 0, PyLong_FromLong((long)mblocks->spos));
+    PyTuple_SET_ITEM(tuple, 1, PyLong_FromLong((long)mblocks->dpos));
+    PyTuple_SET_ITEM(tuple, 2, PyLong_FromLong((long)mblocks->len));
     PyList_SET_ITEM(list, i, tuple);
   }
   tuple = PyTuple_New(3);
-  PyTuple_SET_ITEM(tuple, 0, PyInt_FromLong((long)len1));
-  PyTuple_SET_ITEM(tuple, 1, PyInt_FromLong((long)len2));
-  PyTuple_SET_ITEM(tuple, 2, PyInt_FromLong((long)0));
+  PyTuple_SET_ITEM(tuple, 0, PyLong_FromLong((long)len1));
+  PyTuple_SET_ITEM(tuple, 1, PyLong_FromLong((long)len2));
+  PyTuple_SET_ITEM(tuple, 2, PyLong_FromLong((long)0));
   PyList_SET_ITEM(list, nmb, tuple);
 
   return list;
@@ -1504,8 +1504,8 @@ matching_blocks_to_tuple_list(size_t len1, size_t len2,
 static size_t
 get_length_of_anything(PyObject *object)
 {
-  if (PyInt_Check(object)) {
-    long int len = PyInt_AS_LONG(object);
+  if (PyLong_Check(object)) {
+    long int len = PyLong_AS_LONG(object);
     if (len < 0)
       len = -1;
     return (size_t)len;
@@ -1583,14 +1583,14 @@ editops_py(PyObject *self, PyObject *args)
   }
 
   /* find editops: we were called (s1, s2) */
-  if (PyObject_TypeCheck(arg1, &PyString_Type)
-      && PyObject_TypeCheck(arg2, &PyString_Type)) {
+  if (PyObject_TypeCheck(arg1, &PyBytes_Type)
+      && PyObject_TypeCheck(arg2, &PyBytes_Type)) {
     lev_byte *string1, *string2;
 
-    len1 = PyString_GET_SIZE(arg1);
-    len2 = PyString_GET_SIZE(arg2);
-    string1 = PyString_AS_STRING(arg1);
-    string2 = PyString_AS_STRING(arg2);
+    len1 = PyBytes_GET_SIZE(arg1);
+    len2 = PyBytes_GET_SIZE(arg2);
+    string1 = (lev_byte *)PyBytes_AS_STRING(arg1);
+    string2 = (lev_byte *)PyBytes_AS_STRING(arg2);
     ops = lev_editops_find(len1, string1, len2, string2, &n);
   }
   else if (PyObject_TypeCheck(arg1, &PyUnicode_Type)
@@ -1627,10 +1627,10 @@ opcodes_to_tuple_list(size_t nb, LevOpCode *bops)
     PyObject *is = opcode_names[bops->type].pystring;
     Py_INCREF(is);
     PyTuple_SET_ITEM(tuple, 0, is);
-    PyTuple_SET_ITEM(tuple, 1, PyInt_FromLong((long)bops->sbeg));
-    PyTuple_SET_ITEM(tuple, 2, PyInt_FromLong((long)bops->send));
-    PyTuple_SET_ITEM(tuple, 3, PyInt_FromLong((long)bops->dbeg));
-    PyTuple_SET_ITEM(tuple, 4, PyInt_FromLong((long)bops->dend));
+    PyTuple_SET_ITEM(tuple, 1, PyLong_FromLong((long)bops->sbeg));
+    PyTuple_SET_ITEM(tuple, 2, PyLong_FromLong((long)bops->send));
+    PyTuple_SET_ITEM(tuple, 3, PyLong_FromLong((long)bops->dbeg));
+    PyTuple_SET_ITEM(tuple, 4, PyLong_FromLong((long)bops->dend));
     PyList_SET_ITEM(list, i, tuple);
   }
 
@@ -1701,14 +1701,14 @@ opcodes_py(PyObject *self, PyObject *args)
   }
 
   /* find opcodes: we were called (s1, s2) */
-  if (PyObject_TypeCheck(arg1, &PyString_Type)
-      && PyObject_TypeCheck(arg2, &PyString_Type)) {
+  if (PyObject_TypeCheck(arg1, &PyBytes_Type)
+      && PyObject_TypeCheck(arg2, &PyBytes_Type)) {
     lev_byte *string1, *string2;
 
-    len1 = PyString_GET_SIZE(arg1);
-    len2 = PyString_GET_SIZE(arg2);
-    string1 = PyString_AS_STRING(arg1);
-    string2 = PyString_AS_STRING(arg2);
+    len1 = PyBytes_GET_SIZE(arg1);
+    len2 = PyBytes_GET_SIZE(arg2);
+    string1 = (lev_byte *)PyBytes_AS_STRING(arg1);
+    string2 = (lev_byte *)PyBytes_AS_STRING(arg2);
     ops = lev_editops_find(len1, string1, len2, string2, &n);
   }
   else if (PyObject_TypeCheck(arg1, &PyUnicode_Type)
@@ -1792,18 +1792,18 @@ apply_edit_py(PyObject *self, PyObject *args)
   }
   n = PyList_GET_SIZE(list);
 
-  if (PyObject_TypeCheck(arg1, &PyString_Type)
-      && PyObject_TypeCheck(arg2, &PyString_Type)) {
+  if (PyObject_TypeCheck(arg1, &PyBytes_Type)
+      && PyObject_TypeCheck(arg2, &PyBytes_Type)) {
     lev_byte *string1, *string2, *s;
 
     if (!n) {
       Py_INCREF(arg1);
       return arg1;
     }
-    len1 = PyString_GET_SIZE(arg1);
-    len2 = PyString_GET_SIZE(arg2);
-    string1 = PyString_AS_STRING(arg1);
-    string2 = PyString_AS_STRING(arg2);
+    len1 = PyBytes_GET_SIZE(arg1);
+    len2 = PyBytes_GET_SIZE(arg2);
+    string1 = (lev_byte *)PyBytes_AS_STRING(arg1);
+    string2 = (lev_byte *)PyBytes_AS_STRING(arg2);
 
     if ((ops = extract_editops(list)) != NULL) {
       if (lev_editops_check_errors(len1, len2, n, ops)) {
@@ -1817,7 +1817,7 @@ apply_edit_py(PyObject *self, PyObject *args)
       free(ops);
       if (!s && len)
         return PyErr_NoMemory();
-      result = PyString_FromStringAndSize(s, len);
+      result = PyBytes_FromStringAndSize((char *)s, len);
       free(s);
       return result;
     }
@@ -1833,7 +1833,7 @@ apply_edit_py(PyObject *self, PyObject *args)
       free(bops);
       if (!s && len)
         return PyErr_NoMemory();
-      result = PyString_FromStringAndSize(s, len);
+      result = PyBytes_FromStringAndSize((char *)s, len);
       free(s);
       return result;
     }
