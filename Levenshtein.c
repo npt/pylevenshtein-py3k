@@ -1337,8 +1337,7 @@ setseq_common(PyObject *args, const char *name, SetSeqFuncs foo,
 static inline LevEditType
 string_to_edittype(PyObject *string)
 {
-  const char *s;
-  size_t i, len;
+  size_t i;
 
   for (i = 0; i < N_OPCODE_NAMES; i++) {
     if (string == opcode_names[i].pystring)
@@ -1347,14 +1346,11 @@ string_to_edittype(PyObject *string)
 
   /* With Python >= 2.2, we shouldn't get here, except when the strings are
    * not Strings but subtypes. */
-  if (!PyString_Check(string))
+  if (!PyUnicode_Check(string))
     return LEV_EDIT_LAST;
 
-  s = PyString_AS_STRING(string);
-  len = PyString_GET_SIZE(string);
   for (i = 0; i < N_OPCODE_NAMES; i++) {
-    if (len == opcode_names[i].len
-        && memcmp(s, opcode_names[i].cstring, len) == 0)
+    if (PyUnicode_CompareWithASCIIString(string, opcode_names[i].cstring) == 0)
       return i;
   }
 
@@ -1381,8 +1377,7 @@ extract_editops(PyObject *list)
       return NULL;
     }
     item = PyTuple_GET_ITEM(tuple, 0);
-    if (!PyString_Check(item)
-        || ((type = string_to_edittype(item)) == LEV_EDIT_LAST)) {
+    if ((type = string_to_edittype(item)) == LEV_EDIT_LAST) {
       free(ops);
       return NULL;
     }
@@ -1423,8 +1418,7 @@ extract_opcodes(PyObject *list)
       return NULL;
     }
     item = PyTuple_GET_ITEM(tuple, 0);
-    if (!PyString_Check(item)
-        || ((type = string_to_edittype(item)) == LEV_EDIT_LAST)) {
+    if ((type = string_to_edittype(item)) == LEV_EDIT_LAST) {
       free(bops);
       return NULL;
     }
