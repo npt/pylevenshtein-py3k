@@ -2019,23 +2019,36 @@ subtract_edit_py(PyObject *self, PyObject *args)
   return NULL;
 }
 
+static struct PyModuleDef moduledef = {
+    PyModuleDef_HEAD_INIT,
+    "Levenshtein",
+    Levenshtein_DESC,
+    0,
+    methods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
 
-void
-initLevenshtein(void)
+PyMODINIT_FUNC
+PyInit_Levenshtein(void)
 {
   PyObject *module;
   size_t i;
 
-  module = Py_InitModule3("Levenshtein", methods, Levenshtein_DESC);
+  module = PyModule_Create(&moduledef);
   /* create intern strings for edit operation names */
   if (opcode_names[0].pystring)
     abort();
   for (i = 0; i < N_OPCODE_NAMES; i++) {
     opcode_names[i].pystring
-      = PyString_InternFromString(opcode_names[i].cstring);
+      = PyUnicode_InternFromString(opcode_names[i].cstring);
     opcode_names[i].len = strlen(opcode_names[i].cstring);
   }
   lev_init_rng(0);
+
+  return module;
 }
 /* }}} */
 #endif /* not NO_PYTHON */
